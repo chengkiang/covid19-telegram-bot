@@ -45,7 +45,7 @@ async function getCoronaSummary() {
 
   const summary = entries
     .sort((a, b) => (b['gsx$confirmedcases']['$t'] || 0) - (a['gsx$confirmedcases']['$t'] || 0))
-    .slice(0, 10).map(entry => {
+    .slice(0, 15).map(entry => {
       return {
         country: entry['gsx$country']['$t'].replace(' (Diamond Princess)', ''),
         cases: entry['gsx$confirmedcases']['$t'] || 0,
