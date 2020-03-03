@@ -5,7 +5,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const AsciiTable = require('ascii-table')
 
-const token = process.env.telegramToken;
+const token = 'YOUR_API_KEY';
 
 const bot = new TelegramBot(token, { polling: true });
 
