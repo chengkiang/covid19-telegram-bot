@@ -67,7 +67,7 @@ async function getCoronaSummary() {
     //table.setAlign(2, AsciiTable.RIGHT)
   })
 
-  table.removeBorder();
+  // table.removeBorder();
   
   //console.log(updated);
   //console.log(table.toString() + '\nUpdated: ' + updated);
