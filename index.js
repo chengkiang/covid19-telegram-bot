@@ -4,6 +4,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const AsciiTable = require('ascii-table')
+const moment = require('moment');
 
 const token = process.env.token || 'YOUR_API_KEY';
 
@@ -35,41 +36,46 @@ async function getCoronaInfo() {
 }
 
 async function getCoronaSummary() {
-  const data = await axios.get('https://spreadsheets.google.com/feeds/list/1lwnfa-GlNRykWBL5y7tWpLxDoCfs8BvzWxFjeOZ1YJk/1/public/values?alt=json')
+  const url = 'https://services1.arcgis.com/0MSEUqKaxRlEPj5g/arcgis/rest/services/ncov_cases/FeatureServer/2/query?f=json&where=Confirmed%20%3E%200&returnGeometry=false&spatialRel=esriSpatialRelIntersects&outFields=*&orderByFields=Confirmed%20desc&resultOffset=0&resultRecordCount=200&cacheHint=true'
+
+  const { data: { features } } = await axios.get(url);
 
   const table = new AsciiTable()
   table.setHeading('Country', '😷 / 💀')
 
-  const entries = data.data.feed.entry;
- 
-  const summary = entries
-    .sort((a, b) => (b['gsx$confirmedcases']['$t'] || 0) - (a['gsx$confirmedcases']['$t'] || 0))
-    .slice(0, 20).map(entry => {
-      return {
-        country: entry['gsx$country']['$t']
-          .replace(' (Diamond Princess)', '')
-          .replace('United States', 'USA')
-          .replace('United Kingdom', 'UK')
-          .replace('South Korea', 'S. Korea')
-          .replace('Singapore', 'S\'pore')
-          .replace('Cruise ship', 'C. Ship')
-          .replace('Hong Kong', 'HK')
-          .replace('Malaysia', 'M\'sia')
-          .replace('Switzerland', 'Switz'),
-        cases: entry['gsx$confirmedcases']['$t'] || 0,
-        deaths: entry['gsx$reporteddeaths']['$t'].replace(',', '') || 0
-      }
-    })
+  const updated = moment.unix(Math.max(...features.map(e=>e.attributes.Last_Update))/1000).format('DD MMM YYYY h:mm:ss A');
 
-  summary.forEach((line, index) => {
+  const entries = features.map(f => {
+    return {
+      country: f.attributes.Country_Region,
+      confirmed: f.attributes.Confirmed,
+      deaths: f.attributes.Deaths,
+      Recovered: f.attributes.Recovered
+    }
+  })
+  .sort((a, b) => ((b.confirmed || 0) - (a.confirmed)))
+  .slice(0,20)
+  .map(entry => {
+    return {
+      country: entry.country
+        .replace('Mainland China', 'China')
+        .replace('Others', 'Ship')
+        .replace('United States', 'USA')
+        .replace('United Kingdom', 'UK')
+        .replace('South Korea', 'S. Korea')
+        .replace('Singapore', 'S\'pore')
+        .replace('Hong Kong', 'HK')
+        .replace('Malaysia', 'M\'sia')
+        .replace('Switzerland', 'Switz'),
+      cases: entry.confirmed || 0,
+      deaths: entry.deaths || 0
+    }
+  })
+  .forEach((line, index) => {
     table.addRow((index + 1).toString().padStart(2, ' ') + '. ' + line.country, line.cases + ' / ' + line.deaths)
     table.setAlign(1, AsciiTable.RIGHT)
-    //table.setAlign(2, AsciiTable.RIGHT)
   })
 
-  // table.removeBorder();
-  
-  //console.log(updated);
-  //console.log(table.toString() + '\nUpdated: ' + updated);
-  return table.toString();
+  console.log(table.toString());
+  return table.toString() + `'\nLast updated:${updated}`;
 }
