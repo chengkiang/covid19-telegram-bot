@@ -16,3 +16,14 @@ npm install
 ```
 npm start
 ```
+
+## Using the Telegram Bot
+
+1. Look for the bot's username that you've created above.
+
+2. Click start.
+
+3. Send the following message to the bot
+```
+/corona
+```
